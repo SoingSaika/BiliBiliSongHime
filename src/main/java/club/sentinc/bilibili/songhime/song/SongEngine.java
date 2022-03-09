@@ -10,6 +10,7 @@ import com.goxr3plus.streamplayer.stream.StreamPlayer;
 import com.goxr3plus.streamplayer.stream.StreamPlayerEvent;
 import com.goxr3plus.streamplayer.stream.StreamPlayerException;
 import com.goxr3plus.streamplayer.stream.StreamPlayerListener;
+import javazoom.jl.player.JavaSoundAudioDevice;
 import org.apache.commons.io.FileUtils;
 import org.apache.hc.client5.http.classic.methods.HttpPost;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
@@ -21,6 +22,7 @@ import work.sentinc.musiccaster.bean.music.Result;
 import work.sentinc.musiccaster.bean.music.Song;
 import work.sentinc.musiccaster.engine.NeteaseCloudMusic;
 
+import javax.sound.sampled.*;
 import java.io.*;
 import java.util.*;
 
@@ -88,7 +90,7 @@ public class SongEngine extends NeteaseCloudMusic implements StreamPlayerListene
             File[] childFiles = downloadPath.listFiles();
             if (childFiles != null) {
                 for (File childFile : childFiles) {
-                    if (childFile.getName().equals(songName)) {
+                    if (childFile.getName().equals(songName.concat(".mp3"))) {
                         return Optional.of(childFile);
                     }
                 }
@@ -231,7 +233,6 @@ public class SongEngine extends NeteaseCloudMusic implements StreamPlayerListene
 
     @Override
     public void opened(Object o, Map<String, Object> map) {
-
     }
 
     @Override
@@ -253,7 +254,13 @@ public class SongEngine extends NeteaseCloudMusic implements StreamPlayerListene
                 break;
             case PLAYING:
                 break;
+            case EOM:
             case STOPPED:
+                try {
+                    play();
+                } catch (Exception exception) {
+                    exception.printStackTrace();
+                }
                 break;
             case PAUSED:
                 break;
@@ -264,8 +271,6 @@ public class SongEngine extends NeteaseCloudMusic implements StreamPlayerListene
             case BUFFERING:
                 break;
             case SEEKED:
-                break;
-            case EOM:
                 break;
             case PAN:
                 break;
@@ -282,9 +287,7 @@ public class SongEngine extends NeteaseCloudMusic implements StreamPlayerListene
         }
 
         public void downloadAndOpen(String url, String name) throws IOException {
-            if (getStatus() == Status.PLAYING) {
-                stop();
-            }
+            stop();
             downloadMusic(url, name).ifPresent(
                     file -> {
                         try {
