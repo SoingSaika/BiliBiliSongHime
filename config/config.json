@@ -1,0 +1,31 @@
+{
+  "room": 2871481,
+  "ui": "CMD",
+  "connect_timeout": 10,
+  "download_path": "./cache/song/",
+  "action_prefix": null,
+  "music_login_phone": "17665429233",
+  "music_login_password": "xg524633032789",
+  "action": [
+    {
+      "action": "NEXT",
+      "command": "下一首",
+      "enabled": false
+    },
+    {
+      "action": "PERVIOUS",
+      "command": "上一首",
+      "enabled": false
+    },
+    {
+      "action": "pause",
+      "command": "暂停",
+      "enabled": false
+    },
+    {
+      "action": "SEARCH",
+      "command": "点歌",
+      "enabled": true
+    }
+  ]
+}

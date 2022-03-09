@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="netease-api">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/src/main/resources/netease-api.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
