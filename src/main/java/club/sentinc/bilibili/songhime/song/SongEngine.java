@@ -2,6 +2,7 @@ package club.sentinc.bilibili.songhime.song;
 
 import club.sentinc.bilibili.songhime.config.SongHimeConfig;
 import club.sentinc.bilibili.songhime.exception.NoSongSearchException;
+import club.sentinc.bilibili.songhime.exception.NotLoginException;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
@@ -18,13 +19,15 @@ import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
 import work.sentinc.musiccaster.bean.FmResult;
 import work.sentinc.musiccaster.bean.MusicResult;
+import work.sentinc.musiccaster.bean.login.Account;
 import work.sentinc.musiccaster.bean.music.Result;
 import work.sentinc.musiccaster.bean.music.Song;
-import work.sentinc.musiccaster.engine.NeteaseCloudMusic;
 
 import javax.sound.sampled.*;
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 import static club.sentinc.bilibili.songhime.SongHimeApplication.getConfig;
 
@@ -38,6 +41,8 @@ public class SongEngine extends NeteaseCloudMusic implements StreamPlayerListene
 
     private List<Song> randomSongQueue;
 
+    public Executor songMotionExecutor = Executors.newSingleThreadExecutor();
+
     public SongEngine() throws Exception {
         config = getConfig();
         HashMap<String, String> loginParams = new HashMap<>();
@@ -46,10 +51,6 @@ public class SongEngine extends NeteaseCloudMusic implements StreamPlayerListene
         login(loginParams);
         orderSongQueue = new ArrayList<>();
         randomSongQueue = new ArrayList<>();
-    }
-
-    public void start() throws Exception {
-        play(getQueueNextSong());
     }
 
     @Override
@@ -64,6 +65,12 @@ public class SongEngine extends NeteaseCloudMusic implements StreamPlayerListene
         config.containsAction(action).ifPresent(songAction -> {
             switch (SongActionType.valueOf(songAction.action.getAction())) {
                 case NEXT:
+                    player.stop();
+                    try {
+                        play();
+                    } catch (Exception exception) {
+                        exception.printStackTrace();
+                    }
                     break;
                 case PERVIOUS:
                     break;
@@ -72,7 +79,7 @@ public class SongEngine extends NeteaseCloudMusic implements StreamPlayerListene
                 case SEARCH:
                     try {
                         Optional<Song> songOptional = firstSong(songAction.simplifyCommand);
-                        if(songOptional.isPresent()) {
+                        if (songOptional.isPresent()) {
                             addSongToQueue(songOptional.get());
                         }
                     } catch (Exception exception) {
@@ -97,6 +104,35 @@ public class SongEngine extends NeteaseCloudMusic implements StreamPlayerListene
             }
         }
         return Optional.empty();
+    }
+
+    //TODO
+    public void getPlayList(long uid, int limit, int offset) throws Exception {
+        HashMap<String, String> params = new HashMap<>();
+        params.put("uid", String.valueOf(uid));
+        params.put("limit", String.valueOf(limit));
+        params.put("offset", String.valueOf(offset));
+        String json = this.request.getHttpResponseToString(playListUrl, null, this.crypto.weapi(params));
+        System.out.println(json);
+    }
+
+    public List<Integer> getLikeMusicListIds(long uid) throws Exception {
+        HashMap<String, String> params = new HashMap<>();
+        params.put("uid", String.valueOf(uid));
+        String json = this.request.getHttpResponseToString(likeListUrl, null, this.crypto.weapi(params));
+        System.out.println(json);
+        return new ArrayList<>();
+    }
+
+    public List<Integer> getLoginAccountLikeMusicListIds() throws Exception {
+        if(loginResult != null) {
+            Account account = loginResult.getAccount();
+            if(account != null) {
+                long uid = account.getId();
+                return getLikeMusicListIds(uid);
+            }
+        }
+        throw new NotLoginException();
     }
 
     public void play() throws Exception {
@@ -159,7 +195,7 @@ public class SongEngine extends NeteaseCloudMusic implements StreamPlayerListene
 
     private Optional<File> downloadMusic(String url, String name) throws IOException {
         Optional<File> history = getDownloadHistorySong(name);
-        if(history.isPresent()) {
+        if (history.isPresent()) {
             return history;
         }
         String downloadPathStr = getConfig().getDownloadPath();
@@ -193,7 +229,7 @@ public class SongEngine extends NeteaseCloudMusic implements StreamPlayerListene
     }
 
     public void addSongToQueue(Song song) throws Exception {
-        if(player.getStatus() == Status.STOPPED || player.getStatus() == Status.NOT_SPECIFIED) {
+        if (player.getStatus() == Status.STOPPED || player.getStatus() == Status.NOT_SPECIFIED) {
             play(song);
         } else {
             orderSongQueue.add(song);
@@ -205,7 +241,7 @@ public class SongEngine extends NeteaseCloudMusic implements StreamPlayerListene
         if (orderSongQueue.size() == 0) {
             return getRandomQueueNextSong();
         } else {
-            return orderSongQueue.get(0);
+            return orderSongQueue.remove(0);
         }
     }
 
@@ -214,7 +250,7 @@ public class SongEngine extends NeteaseCloudMusic implements StreamPlayerListene
             List<Song> songList = random();
             randomSongQueue.addAll(songList);
         }
-        return randomSongQueue.get(0);
+        return randomSongQueue.remove(0);
     }
 
     public List<Song> random() throws Exception {
@@ -256,11 +292,13 @@ public class SongEngine extends NeteaseCloudMusic implements StreamPlayerListene
                 break;
             case EOM:
             case STOPPED:
-                try {
-                    play();
-                } catch (Exception exception) {
-                    exception.printStackTrace();
-                }
+                songMotionExecutor.execute(() -> {
+                    try {
+                        play();
+                    } catch (Exception exception) {
+                        exception.printStackTrace();
+                    }
+                });
                 break;
             case PAUSED:
                 break;
@@ -287,7 +325,6 @@ public class SongEngine extends NeteaseCloudMusic implements StreamPlayerListene
         }
 
         public void downloadAndOpen(String url, String name) throws IOException {
-            stop();
             downloadMusic(url, name).ifPresent(
                     file -> {
                         try {

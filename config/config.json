@@ -10,7 +10,7 @@
     {
       "action": "NEXT",
       "command": "下一首",
-      "enabled": false
+      "enabled": true
     },
     {
       "action": "PERVIOUS",
