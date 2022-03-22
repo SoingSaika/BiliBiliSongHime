@@ -18,13 +18,13 @@
       "enabled": false
     },
     {
-      "action": "pause",
+      "action": "PAUSE",
       "command": "暂停",
       "enabled": true
     },
     {
-      "action": "play",
-      "command": "播放",
+      "action": "PLAY",
+      "command": "继续",
       "enabled": true
     },
     {

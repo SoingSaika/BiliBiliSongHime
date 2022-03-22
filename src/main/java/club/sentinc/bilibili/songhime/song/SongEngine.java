@@ -74,7 +74,11 @@ public class SongEngine extends NeteaseCloudMusic implements StreamPlayerListene
                     break;
                 case PERVIOUS:
                     break;
+                case PLAY:
+                    player.resume();
+                    break;
                 case PAUSE:
+                    player.pause();
                     break;
                 case SEARCH:
                     try {
