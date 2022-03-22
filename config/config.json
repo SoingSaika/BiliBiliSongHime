@@ -20,7 +20,12 @@
     {
       "action": "pause",
       "command": "暂停",
-      "enabled": false
+      "enabled": true
+    },
+    {
+      "action": "play",
+      "command": "播放",
+      "enabled": true
     },
     {
       "action": "SEARCH",
