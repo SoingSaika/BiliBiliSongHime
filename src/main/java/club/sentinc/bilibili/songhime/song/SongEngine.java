@@ -1,8 +1,10 @@
 package club.sentinc.bilibili.songhime.song;
 
 import club.sentinc.bilibili.songhime.config.SongHimeConfig;
+import club.sentinc.bilibili.songhime.entity.Danmu;
 import club.sentinc.bilibili.songhime.exception.NoSongSearchException;
 import club.sentinc.bilibili.songhime.exception.NotLoginException;
+import club.sentinc.bilibili.songhime.websocket.DanmuAction;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
@@ -31,7 +33,7 @@ import java.util.concurrent.Executors;
 
 import static club.sentinc.bilibili.songhime.SongHimeApplication.getConfig;
 
-public class SongEngine extends NeteaseCloudMusic implements StreamPlayerListener {
+public class SongEngine extends NeteaseCloudMusic implements StreamPlayerListener, DanmuAction {
 
     private Player player = new Player();
 
@@ -61,8 +63,9 @@ public class SongEngine extends NeteaseCloudMusic implements StreamPlayerListene
     public void saveConfig(String configPath) {
     }
 
-    public void doAction(String action) {
-        config.containsAction(action).ifPresent(songAction -> {
+    @Override
+    public void doDanmuAction(Danmu danmu) {
+        config.containsAction(danmu.getDanmuContent()).ifPresent(songAction -> {
             switch (SongActionType.valueOf(songAction.action.getAction())) {
                 case NEXT:
                     player.stop();

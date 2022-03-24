@@ -2,7 +2,6 @@ package club.sentinc.bilibili.songhime.websocket;
 
 import club.sentinc.bilibili.songhime.entity.Danmu;
 import club.sentinc.bilibili.songhime.entity.LivePacket;
-import club.sentinc.bilibili.songhime.song.SongEngine;
 import club.sentinc.bilibili.songhime.util.BiliBiliRoomUtil;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.drafts.Draft;
@@ -13,12 +12,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Timer;
-import java.util.TimerTask;
-
-import static club.sentinc.bilibili.songhime.SongHimeApplication.getSongEngine;
+import java.util.*;
 
 public class DanmuWebsocket extends WebSocketClient {
 
@@ -26,12 +20,12 @@ public class DanmuWebsocket extends WebSocketClient {
 
     private final Timer heartbeatTimer = new Timer();
 
-    private SongEngine songEngine;
+    private List<DanmuAction> danmuActions;
 
     public DanmuWebsocket(int realRoomId) throws IOException {
         super(URI.create(BiliBiliRoomUtil.getRoomWebSocketHost(realRoomId)), new DanmuDraft());
         this.realRoomId = realRoomId;
-        songEngine = getSongEngine();
+        danmuActions = new ArrayList<>();
     }
 
     public DanmuWebsocket(URI serverUri) {
@@ -85,15 +79,23 @@ public class DanmuWebsocket extends WebSocketClient {
     }
 
     public void onMessage(Danmu danmu) {
-        songEngine.doAction(danmu.getDanmuContent());
+        System.out.println(danmu);
+        danmuActions.forEach(danmuAction -> {
+            danmuAction.doDanmuAction(danmu);
+        });
     }
 
     public void onMessage(LivePacket packet) {
         Optional<Danmu> optionalDanmu = Danmu.generateDanmu(packet);
-        Danmu danmu = optionalDanmu.get();
-        if(danmu != null) {
-            onMessage(danmu);
-        }
+        optionalDanmu.ifPresent(this::onMessage);
+    }
+
+    public void addDanmuAction(DanmuAction action) {
+        danmuActions.add(action);
+    }
+
+    public void removeDanmuAction(DanmuAction action) {
+        danmuActions.remove(action);
     }
 
     @Override

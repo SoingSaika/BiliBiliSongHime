@@ -4,6 +4,7 @@ import club.sentinc.bilibili.songhime.config.ConfigLoader;
 import club.sentinc.bilibili.songhime.config.SongHimeConfig;
 import club.sentinc.bilibili.songhime.exception.WebSocketConnectedException;
 import club.sentinc.bilibili.songhime.exception.WebSocketException;
+import club.sentinc.bilibili.songhime.ruankao.RuanKaoEngine;
 import club.sentinc.bilibili.songhime.song.SongEngine;
 import club.sentinc.bilibili.songhime.ui.UIAbstract;
 import club.sentinc.bilibili.songhime.ui.UIType;
@@ -23,16 +24,21 @@ import static club.sentinc.bilibili.songhime.exception.ExceptionExecutor.throwEx
 public final class SongHimeApplication {
 
     private static SongHimeConfig config;
-    private static WebSocketClient danmuWebSocket;
+    private static DanmuWebsocket danmuWebSocket;
     private static UIAbstract ui;
     private static SongEngine songEngine;
+    private static RuanKaoEngine ruanKaoEngine;
 
     public static void run() {
         try {
             config = ConfigLoader.load();
             songEngine = new SongEngine();
+            ruanKaoEngine = new RuanKaoEngine();
             ui = createCurrentUIAbstract(UIType.valueOf(config.getUi()));
             connectDanmuWebSocket();
+            danmuWebSocket.addDanmuAction(songEngine);
+            ruanKaoEngine.loadData();
+            ruanKaoEngine.getRandomQuestion().ifPresent(System.out::println);
         } catch (IOException | InterruptedException e) {
             throwException(e);
         } catch (Exception exception) {

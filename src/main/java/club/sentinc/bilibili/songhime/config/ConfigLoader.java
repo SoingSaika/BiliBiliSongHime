@@ -8,7 +8,7 @@ import java.nio.charset.StandardCharsets;
 
 public final class ConfigLoader {
 
-    private final static String CONFIG_PATH = "./config/config.json";
+    private final static String CONFIG_PATH = "./config/live_and_song_config.json";
 
     public static SongHimeConfig load() throws IOException, JSONException, ClassCastException {
         try (FileInputStream fis = new FileInputStream(CONFIG_PATH);
