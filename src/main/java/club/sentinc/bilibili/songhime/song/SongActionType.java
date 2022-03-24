@@ -2,6 +2,6 @@ package club.sentinc.bilibili.songhime.song;
 
 public enum SongActionType {
 
-    NEXT, PERVIOUS, PAUSE, SEARCH;
+    NEXT, PERVIOUS, PAUSE, SEARCH, PLAY;
 
 }
